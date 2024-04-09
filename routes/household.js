@@ -10,7 +10,6 @@ const dataFolder = './data';
 const logDataFile = 'loggedData.csv';
 const userDataFile = 'usersdb.json';
 
-
 /////////////////////////////////////////////////////////////
 ///////////////////// Helper Functions //////////////////////
 /////////////////////////////////////////////////////////////
@@ -165,6 +164,48 @@ function updateLogData(newLog){
     return logData;
 }
 
+function breakDownMessageBodyArrIntoHeaderAndDate(msgBody) {
+    //                         0     1      2     3  4  5  6  7  8
+    // Message body array : ['1001', '123', '20240405', "'0'", "'0'", "'0'", "'0'", "'0'", "'0'"]
+  
+    let voltTemp = msgBody[3].replace(/'/g, '');
+    let currentTemp = msgBody[4].replace(/'/g, '');
+    let powerTemp = msgBody[5].replace(/'/g, '');
+    let energyTemp = msgBody[6].replace(/'/g, '');
+    let freqTemp = msgBody[7].replace(/'/g, '');
+    let pfTemp = msgBody[8].replace(/'/g, '');
+  
+    let deviceID = Number(msgBody[0]);
+    let password = msgBody[1];
+    let date = msgBody[2];
+    let epochDate = convertDateToEpoch(date);
+    let voltage = Number(voltTemp);
+    let current = Number(currentTemp);
+    let power = Number(powerTemp);
+    let energy = Number(energyTemp);
+    let frequency = Number(freqTemp);
+    let powerFactor = Number(pfTemp);
+  
+    let headers = {
+        'Content-Type': 'application/json',
+        'password': password,
+    }
+  
+    let data = {
+        "DeviceID": deviceID,
+        "TimeStamp": epochDate,
+        "Voltage": voltage,
+        "Current": current,
+        "PowerW": power,
+        "EnergyWH": energy,
+        "Frequency": frequency,
+        "PowerFactor": powerFactor,
+    }
+  
+  
+    return [headers, data];
+}
+  
 /////////////////////////////////////////////////////////////
 /////////////////////// Routes //////////////////////////////
 /////////////////////////////////////////////////////////////
@@ -234,6 +275,7 @@ router.post('/log-data/:deviceID', (req, res) => {
     //validate if node/user/device exists
     if (!userData[deviceID]){
         res.status(404).send('Not Found');
+        console.log("Rejected Request due to id not existing : 404")
         return;
     }
 
@@ -248,8 +290,8 @@ router.post('/log-data/:deviceID', (req, res) => {
         // console.log("TroubleShootLog")
         // console.log(password)
         // console.log(userData[deviceID].password)
-
         res.status(401).send('Unauthorized');
+        console.log("Rejected Request due to incorrect password : 401")
         return;
     }
 
@@ -263,6 +305,10 @@ router.post('/log-data/:deviceID', (req, res) => {
     }
     else{
         res.status(400).send('Bad Request');
+        console.log("Rejected Request due to bad request : 400")
+        console.log("Data is not valid")
+        console.log(newLog)
+        console.log("--------------------------------------------")
     }
 });
 
@@ -345,6 +391,5 @@ router.post('/login/:deviceID', (req, res) => {
     res.status(200).send('Login Successful');
     console.log("Login Successful for id " + deviceID);
 });
-
 
 module.exports = router;

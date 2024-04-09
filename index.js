@@ -22,15 +22,13 @@ app.use(bodyParser.json());
 ////////////////////////////////////////////////////////////////////////////////////////
 
 app.get('/', (req, res) => {
-    const allTestLinks = `<li> <a href="http://localhost:3030/household">Household</a> </li> <li> <a href="http://localhost:3030/admin">Admin</a> </li>`;
-    const response = `<div> <h1>Root Directory</h1> <p>Testing URLs <ul> ${allTestLinks} </ul> </p> </div>`
+    let response = `You are at the root.`
     res.send(response);
     }
 );
 
 app.get('/test', (req, res) => {
-    const allTestLinks = `<li> <a href="http://localhost:3030/household">Household</a> </li> <li> <a href="http://localhost:3030/admin">Admin</a> </li>`;
-    const response = `<div> <h1>Test in Root Directory</h1> <p>Testing URLs <ul> ${allTestLinks} </ul> </p> </div>`
+    let response = `You are at the test route.`
     res.send(response);
     }
 );
