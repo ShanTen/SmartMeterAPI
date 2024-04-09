@@ -1,0 +1,99 @@
+Server Side Code Goes hard 🔥🔥🔥
+ToDo: 
+1. Understand and get demo message -- done -- message in the form of an array
+2. Write function that verifies and breaks down demo message into parts and returns an object
+3. DataStoreWrapper -> Wrapper that can be configured to read/write to either mongo, json or text.
+4. Middleware to handle two parts of server 
+5. Authentication 
+6. HTTPS --> OpenSSL --> https://www.youtube.com/watch?v=USrMdBF0zcg
+                     --> https://www.youtube.com/watch?v=qlcVx-k-02E
+
+############################################################################################################
+#################################### Doubts I have #########################################################
+############################################################################################################
+Use Process
+-----------
+- HouseHold receives node with unique id, random password --> both fixed and cannot change [VULNERABILITY]
+- HouseHold connects node to single phase AC supply (non-invasive) --> Node starts sending data to server
+- Household log into mobile app to see last updated time 
+- Household go to drop down and select the time range they want to to see power consumption logs for 
+- They see the thing
+
+1. Do I need to implement authentication
+    - Yes
+    - Keep it a basic deviceID and password type of thing
+    - Encrypt the password and store it in a database (id, pass-encrypted)
+    - Encryption will be done with a UNIVERSAL SALT --> BIG [VULNERABILITY]
+    - UNIVERSAL SALT WILL BE STORED IN ENV VARIABLES --> BIG [VULNERABILITY]
+2. Do I need to implement HTTPS 
+    - no (for phase 1)
+3. Do I need to implement variable polling and data redundancy  --> no
+    polling -> Reading Measurement => keep it constant 1 hour
+    dispatching -> Sending Measurement => Try 3 times, if fail, store in ROM and send in next cycle
+    redundancy -> Store data for 7 days, then delete it
+
+4. Do I need to implement a variable dispatch rate --> no
+
+Software Lacking
+1. Node Verification --> Is it a valid node --> SignedNode/UnsignedNode [VULNERABILITY]
+
+
+############################################################################################################
+#################################### Design Notes #########################################################
+############################################################################################################
+
+Things I am tracking in each data log:
+    i. MeterID, TimeStamp, Voltage, Current, Power, Energy (Watt Hour), Frequency, PowerFactor
+
+Note:
+    - Each entry is a point, it is not cumulative
+    - Power consumed is measured in KWH
+    - Sum up all logs from last billing cycle to get total power consumed
+
+Web APIs Required For Front End:
+Paths
+    i.  /API/ADMIN --> Get for all data --> Needs API Key 
+    ii. /API/HOUSEHOLD --> Needs API Key/JWT (does it really though?)
+
+Ability to watch billing cycle
+
+Common end points
+1. GET         /API/COMMON/last-n-Hours/{id}/; body => {hours: n} --> DateTime[n]
+2. GET         /API/HOUSEHOLD/last-n-Days/{id}/{n} --> DateTime[n]
+3. GET         /API/HOUSEHOLD/last-update/{id} --> Unix TimeStamp
+4. GET         /API/HOUSEHOLD/from-date-to-date/{id}/ --> DateTime[from, to] (from and to are unix timestamps at 12:01 AM of the start day until 19:59 PM of the end day)
+
+Read write methos are synchronous; change to async in future versions
+
+############################################################################################################
+#################################### API Reference #########################################################
+############################################################################################################
+
+1. Paths - admin, household
+2. Methods - GET, POST
+3. Headers - API-KEY, JWT
+4. Body - JSON
+
+1. usersDB => JSON
+2. powerLOG => SQL
+
+Step-1
+    Set up communications between relay node and this. -- done
+
+Step-2
+    Design user schema
+    User:
+        nodeid
+        password
+
+
+
+loggedData.csv emulates SQL store of data logs
+    Schema:
+        - LogID, MeterID, TimeStamp, Voltage, Current, PowerW, EnergyWH, Frequency, PowerFactor
+        - TimeStamp is unix epoch
+
+userDb.json emulates JSON store of user data
+    Schema:
+        - NodeID, Name, Password
+
