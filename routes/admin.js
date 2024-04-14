@@ -165,6 +165,59 @@ router.get('/log-data/:deviceID', (req, res) => {
     });
 });
 
+// get ranged data
+router.get('/log-data/:deviceID/:start/:end', (req, res) => 
+    {
+    let logData = fetchLogData();
+    let userData = fetchUserData();
+
+    let deviceID = req.params.deviceID;
+    
+    //validate if node/user/device exists
+    if (!userData[deviceID]){
+        res.status(404).send('Not Found');
+        return;
+    }
+
+    let token = req.headers['x-auth-token'];
+
+    if (!token)
+        return res.status(401).send({ auth: false, message: 'No token provided' });
+    
+
+    jwt.verify(token, getSecretKey().secret, (err, decoded) => {
+        if (err){
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token' });
+        }
+        
+        //get ranged data 
+        let epochStart = req.params.start;
+        let epochEnd = req.params.end;
+        epochStart = Number(epochStart);
+        epochEnd = Number(epochEnd);
+
+        console.log(`Epoch start: ${epochStart} Epoch end: ${epochEnd}`)
+
+        if(isNaN(epochStart) || isNaN(epochEnd) || epochStart > epochEnd || epochStart < 0 || epochEnd < 0 ){
+            res.status(400).send('Bad Request! Check your start and end times.');
+            return;
+        }
+    
+        let rangedData = logData.data.filter((entry) => {
+            return entry[2] >= epochStart && entry[2] <= epochEnd;
+        });
+
+        let rangedDataObj = {
+            labels: logData.labels,
+            entryCount: rangedData.length,
+            data: rangedData
+        }
+
+        res.send(JSON.stringify(rangedDataObj)).status(200);
+    });
+});
+
+
 router.post('/login', (req, res) => {
     authenticate(req, res);
 })    
