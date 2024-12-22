@@ -1,0 +1,71 @@
+/*
+  Slabs:
+    1) Units 0 - 100: 0 Rs
+
+  How to be processed 
+    if units > from && units <= to
+      then cost = rate * units
+    else
+      cost = rate * (to - from) + rate * (units - to)
+*/
+
+{
+  "adnSubsidyUnitsCap": 500,
+  // Slabs for Units greater than additional subsidy cap
+  "slabsGTadnSub": [
+    {
+      "from": 0, // gt that from quantity
+      "to": 100, // inclusive
+      "rate": 0
+    },
+    {
+      "from": 100,
+      "to": 400,
+      "rate": 4.7
+    },
+    {
+      "from": 400,
+      "to": 500,
+      "rate": 6.3
+    },
+    {
+      "from": 500,
+      "to": 600,
+      "rate": 8.4
+    },
+    {
+      "from": 600,
+      "to": 800,
+      "rate": 9.45
+    },
+    {
+      "from": 800,
+      "to": 1000,
+      "rate": 10.5
+    }
+  ],
+  // Slabs for Units lesser than additional subsidy cap
+  "slabsLTadnSub": [
+    {
+      "from": 0, 
+      "to": 100, 
+      "rate": 0
+    },
+    {
+      "from": 100,
+      "to": 200,
+      "rate": 2.35
+    },
+    {
+      "from": 200,
+      "to": 400,
+      "rate": 4.7
+    },
+    {
+      "from": 400,
+      "to": 500,
+      "rate": 6.3
+    }
+  ],
+  "maxRate": 11.55 // For units > 1000 
+}
