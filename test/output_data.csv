@@ -1,4 +1,4 @@
-LogID,DeviceID,TimeStamp,Voltage,Current,EnergyW,PowerWH,Frequency,PowerFactor
+LogID,DeviceID,TimeStamp,Voltage,Current,EnergyWH,PowerW,Frequency,PowerFactor
 1,1001,1711218660,230,5.2,1196,25.6,50,0.98
 2,1001,1711305060,228,5.3,1208,26.1,49.8,0.97
 3,1001,1711391460,231,5.1,1181,26.5,50.2,0.99
