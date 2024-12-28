@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
+const { calculateBill, makeBillingTable } = require('../billing');
 
 /////////////////////////////////////////////////////////////
 ////////////////// Global Variables /////////////////////////
@@ -77,7 +78,7 @@ function csv2json(data){
     return obj;
 }
 
-function writeToCSVwithLogData(data){
+async function writeToCSVwithLogData(data){
     //writes a logObject to the csv file
 
     //In logObject.data each row is a list of values in the csv file
@@ -103,7 +104,10 @@ function writeToCSVwithLogData(data){
     // console.log("CSV is")
     // console.log(csv)
 
-    fs.writeFileSync(csvFile, csv);
+    fs.writeFile(csvFile, csv, (err) => {
+        if(err) throw err;
+        // console.log('Data written to file');
+    });
 }
 
 function fetchUserData(){
@@ -133,16 +137,23 @@ function isValid(data){
 
     let {DeviceID,TimeStamp,Voltage,Current,PowerW,EnergyWH,Frequency,PowerFactor} = data;
     let _t = [DeviceID,TimeStamp,Voltage,Current,PowerW,EnergyWH,Frequency,PowerFactor];
+    let _t_str = [`DeviceID`,`TimeStamp`,`Voltage`,`Current`,`PowerW`,`EnergyWH`,`Frequency`,`PowerFactor`];
+    let i = 0;
     for(let attr of _t){
         if(attr === undefined || attr === null){
+            console.log(data)
+            console.log(_t)
+            console.log(`Attribute ${_t_str[i]} is bad or null`)
+            console.log(attr)
             return false;
         }
+        i++;
     }
 
     return true;
 }
 
-function updateLogData(newLog){
+async function updateLogData(newLog){
     //adds a new entry to the log data
     //logData will be an object of values 
     //used in post request to add new data
@@ -159,7 +170,7 @@ function updateLogData(newLog){
     logData.entryCount += 1;
     //write the updated logData to the csv file
     //return;
-    writeToCSVwithLogData(logData);
+    await writeToCSVwithLogData(logData);
     
     return logData;
 }
@@ -205,7 +216,15 @@ function breakDownMessageBodyArrIntoHeaderAndDate(msgBody) {
   
     return [headers, data];
 }
-  
+ 
+function getRangedData(logData, epochStart, epochEnd){
+    let rangedData = logData.data.filter((val) => {
+        return val[2] >= epochStart && val[2] <= epochEnd;
+    }
+    );
+    return rangedData;
+}
+
 /////////////////////////////////////////////////////////////
 /////////////////////// Routes //////////////////////////////
 /////////////////////////////////////////////////////////////
@@ -252,13 +271,17 @@ router.get('/log-data/:deviceID', (req, res) => {
         return;
     }
 
+    const filteredData = logData.data.filter((val) => {
+        return val[1] == deviceID;
+    });
+
     //send the data --> Sends All Data
     console.log("Sending device data")
-    res.send(JSON.stringify(logData.data));
+    res.send(JSON.stringify(filteredData));
     
 });
 
-router.post('/log-data/:deviceID', (req, res) => {
+router.post('/log-data/:deviceID', async (req, res) => {
     /*
         param: deviceID
         headers: password
@@ -292,15 +315,19 @@ router.post('/log-data/:deviceID', (req, res) => {
         // console.log(userData[deviceID].password)
         res.status(401).send('Unauthorized');
         console.log("Rejected Request due to incorrect password : 401")
+        console.log("Entered Password: " + password)
+        console.log("Expected Password: " + userData[deviceID].password)
+        console.log("--------------------------------------------")
         return;
     }
 
     //get the newLog
     let newLog = req.body;
+
     //newLog.TimeStamp = dateStrToEpoch(newLog.TimeStamp);
 
     if(isValid(newLog)){
-        updateLogData(newLog);
+        await updateLogData(newLog);
         res.status(200).send('Data logged successfully');
     }
     else{
@@ -360,9 +387,9 @@ router.get('/log-data/ranged/:deviceID/:epochStart/:epochEnd', (req, res) => {
     }
 
     let rangedData = logData.data.filter((val) => {
-        return val[2] >= epochStart && val[2] <= epochEnd;
-    }
-    );
+        return val[2] >= epochStart && val[2] <= epochEnd && val[1] == deviceID;
+    });
+
     // console.log(rangedData)
     res.send(JSON.stringify(rangedData));
 });
@@ -390,6 +417,69 @@ router.post('/login/:deviceID', (req, res) => {
 
     res.status(200).send('Login Successful');
     console.log("Login Successful for id " + deviceID);
+});
+
+router.get('/bill/:deviceID/:epochStart/:epochEnd', (req, res) => {
+    /*
+        param: deviceID
+        response: 200 OK, 404 Not Found
+    */
+
+    // #region FetchData
+    let logData = fetchLogData();
+    let userData = fetchUserData();
+
+    let deviceID = req.params.deviceID;
+    let epochStart = req.params.epochStart;
+    let epochEnd = req.params.epochEnd;
+    // #endregion
+
+    //validate if node/user/device exists
+    if (!userData[deviceID]){
+        res.status(404).send('Not Found');
+        return;
+    }
+
+    // #region ValidatePassword
+    let headers = req.headers;
+    let password = headers['password'];
+    //validate password
+    // console.log(`Received password: ${password}`)
+    // console.log(`Expected password: ${userData[deviceID].password}`)
+    if (password != userData[deviceID].password){
+        res.status(401).send('Unauthorized');
+        return;
+    }
+    // #endregion
+
+    //parse the epoch values to numbers and validate them
+    if(isNaN(epochStart) || isNaN(epochEnd) || epochStart > epochEnd || epochStart < 0 || epochEnd < 0 ){
+        res.status(400).send('Bad Request');
+        return;
+    }
+
+
+    let rangedData = getRangedData(logData, epochStart, epochEnd);
+
+    // filter all data and send only that of deviceID
+    let deviceData = rangedData.filter((val) => {
+        return val[1] == deviceID;
+    });
+
+    // LogID,DeviceID,TimeStamp,Voltage,Current,EnergyWH,PowerW,Frequency,PowerFactor
+
+    var total_units_in_kWh = 0;
+
+    for(let i=0; i<deviceData.length; i++){
+        total_units_in_kWh += deviceData[i][6];
+    }
+    total_units_in_kWh = total_units_in_kWh/1000;
+
+    let bill = calculateBill(total_units_in_kWh);
+    let billTable = makeBillingTable(total_units_in_kWh);
+
+    res.send({'units': total_units_in_kWh, bill, billTable});
+
 });
 
 module.exports = router;
