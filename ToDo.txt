@@ -1,32 +1,37 @@
-Before Integration
-- Finish User App (React Native) -- Shantanu
-- Finish Admin App (HTML) -- Prasanna
-- Make changes to relay app such that it reflects with text box 
-- Implement https everywhere 
+Changes V02 
+1. CRUD End Points 
+    For A Device 
+    Ad -> Create a device  -- done
+    Ad -> Delete a device  -- done
+    Ad -> Edit a device   -- done
+    Ad -> Retrieve a device -- done
+    For Logs
+    Ho -> Create a log -- done 
+    Ad -> Delete a log -- done
+    Ad -> Edit a log -- done
+    Ho/Ad -> Retrieve a log -- done
 
-Integration
-- Integrate Apps Locally 
-- Host Apps 
+2. Simulate.js -- done
+    -> Creating Many Nodes and Adding to DB -- done
+    -> Creating readings for those nodes across many days -- done
 
-Dump:
+3. Max Demand End Point -- done
+    -> inputs : time-start, time-end, nodes (optional)
 
-1,1001,1711218660000,230,5.2,1196,25.6,50,0.98
-2,1001,1711305060000,228,5.3,1208,26.1,49.8,0.97
-3,1001,1711391460000,231,5.1,1181,26.5,50.2,0.99
-4,1001,1711477860000,227,5.4,1228,27,50.1,0.96
-5,1001,1711564260000,229,5.2,1193,27.5,49.9,0.97
-6,1001,1711650660000,230,5.3,1219,28,50,0.98
-7,1001,1711737060000,228,5.1,1168,28.4,50.1,0.99
-8,1001,1711823460000,231,5.5,1265,28.9,50.2,0.96
-9,1001,1711909860000,229,5.4,1238,29.4,49.8,0.97
-10,1001,1711996260000,230,5.2,1204,29.8,50,0.98
-11,1001,1712082660000,228,5.3,1221,30.3,50.1,0.99
-12,1001,1712169060000,231,5.1,1175,30.8,50.2,0.96
-13,1001,1711381035000,231,5.3,1225,30.2,50,0.97
-14,1001,1712275200000,0,0,0,0,0,0
-15,1001,1712275200000,0,0,0,0,0,0
-16,1001,1712275200000,0,0,0,0,0,0
-17,1001,1712275200000,0,0,0,0,0,0
-18,1001,1712275200000,0,0,0,0,0,0
-19,1001,1712275200000,0,0,0,0,0,0.95
-20,1001,1579564800000,0,0,0,0,0,0
+    -> Algo:
+        get billing cycle period (nr of days)
+        get all entries from that period 
+        find peak demand 
+    -> Change references to watt and watt-hour everywhere. (app, csv, inside code)
+    -> Watt - power 
+    -> watt-hour - energy 
+
+    -> https://en.wikipedia.org/wiki/Load_factor_(electrical)
+	-> Doubt with sir: do we assume linear or non linear load for power factor 
+    -> https://en.wikipedia.org/wiki/Power_factor#Non-linear_loads
+    -> total load = 
+
+4. Bill Calculator End Point -- done
+    - Input: meterID, timeFrame: start, end
+
+
